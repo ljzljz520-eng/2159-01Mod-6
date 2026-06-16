@@ -18,6 +18,8 @@ RUN emcc fireworks.c \
     -s USE_SDL=2 \
     -s WASM=1 \
     -s ALLOW_MEMORY_GROWTH=1 \
+    -s EXPORTED_FUNCTIONS='["_cancel_performance", "_switch_theme", "_main"]' \
+    -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
     -O3 \
     -o public/fireworks.js
 

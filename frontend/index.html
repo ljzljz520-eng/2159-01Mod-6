@@ -15,26 +15,103 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
         }
         canvas {
             display: block;
             outline: none;
         }
+        #countdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #countdown-display {
+            font-size: 200px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 40px rgba(255, 255, 255, 0.8),
+                         0 0 80px rgba(255, 255, 255, 0.4);
+            transition: transform 0.3s ease-out;
+            user-select: none;
+        }
+        #countdown-display.pulse {
+            animation: pulse 0.5s ease-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        #countdown-hint {
+            margin-top: 30px;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            letter-spacing: 2px;
+        }
+        #current-theme {
+            margin-top: 10px;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
     <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+    
+    <div id="countdown-overlay">
+        <div id="countdown-display">3</div>
+        <div id="countdown-hint">按 ESC 取消 | 按 T 切换主题</div>
+        <div id="current-theme">当前主题: 夜空</div>
+    </div>
+    
     <script>
+        var countdownEnded = false;
+        
+        function hideCountdown() {
+            if (countdownEnded) return;
+            countdownEnded = true;
+            const overlay = document.getElementById('countdown-overlay');
+            if (overlay) {
+                overlay.style.transition = 'opacity 0.5s ease-out';
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.classList.add('hidden'), 500);
+            }
+        }
+        
+        var originalLog = console.log.bind(console);
+        console.log = function(...args) {
+            if (args.length > 0 && typeof args[0] === 'string') {
+                if (args[0].includes('[演出开始]') || args[0].includes('[演出日志]')) {
+                    hideCountdown();
+                }
+            }
+            originalLog.apply(console, args);
+        };
+        
         var Module = {
             canvas: (function() {
                 var canvas = document.getElementById('canvas');
-                // Make canvas full screen
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
                 return canvas;
             })(),
             onRuntimeInitialized: function() {
                 console.log("烟花C模块已加载");
+                
+                Module._cancel_performance = Module.cwrap('cancel_performance', 'void', []);
+                Module._switch_theme = Module.cwrap('switch_theme', 'void', []);
             }
         };
         
